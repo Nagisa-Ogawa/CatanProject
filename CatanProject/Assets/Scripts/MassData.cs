@@ -17,9 +17,9 @@ public enum RESOURCE
 public class MassData
 {
     // そのマスの数字
-    public int number;
+    public int number=0;
     // そのマスにある資源
     public RESOURCE resource;
     // そのマスに泥棒がいるかどうか
-    public bool isThief;
+    public bool isThief = false;
 };

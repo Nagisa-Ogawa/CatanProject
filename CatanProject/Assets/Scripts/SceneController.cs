@@ -49,8 +49,10 @@ public class SceneController : MonoBehaviour
     bool isHost = false;
     // 現在のゲームの状態
     GAMESTATE gameState = GAMESTATE.DEFAULT;
-    // ステージの二次元リスト
+    // ステージデータの二次元リスト
     List<List<MassData>> stages = new List<List<MassData>>();
+    // ステージオブジェクトの二次元リスト
+    List<List<GameObject>> stageObjs = new List<List<GameObject>>();
     // ステージの大きさ
     [SerializeField]
     int[] stageLength = { 3, 4, 5, 4, 3 };
@@ -78,15 +80,15 @@ public class SceneController : MonoBehaviour
     [SerializeField]
     List<Material> resourceMaterials = new List<Material>();
     // マスに置く番号の配列
-    int[] massNumber = { 5, 2, 6, 3, 8, 10, 9, 11, 12, 4, 8, 10, 9, 4, 5, 6, 3, 11 };
+    int[] massNumber = { 5, 2, 6, 3, 8, 10, 9, 12, 11, 4, 8, 10, 9, 4, 5, 6, 3, 11 };
     // マスに置く番号を決めるときの進む方向
     List<Vector2Int> moveDirectionWhenDecideNum = new List<Vector2Int>()
     {
-        new Vector2Int( 0,-1),
-        new Vector2Int( 1, 0),
-        new Vector2Int( 1, 1),
-        new Vector2Int(-1, 1),
-        new Vector2Int(-1, 0),
+        new Vector2Int( 0, 1),  // 左下、右下
+        new Vector2Int( 1, 0),  // 右
+        new Vector2Int( 1,-1),  // 右上
+        new Vector2Int(-1,-1),  // 左上
+        new Vector2Int(-1, 0),  // 左
     };
 
     // Start is called before the first frame update
@@ -132,11 +134,13 @@ public class SceneController : MonoBehaviour
         // ステージを初期化
         for(int y = 0; y < stageLength.Length; y++)
         {
+            List<GameObject> massObjects = new List<GameObject>();
             List<MassData> massDatas = new List<MassData>();
             for(int x = 0; x < stageLength[y]; x++)
             {
                 // マスを作成
                 var massObj = Instantiate(massPrefab);
+                massObjects.Add(massObj);
                 // 位置を決定
                 Vector3 pos = Vector3.zero;
                 var offset = stageLength[0] % 2 == 0 ? -1 : 1;
@@ -162,12 +166,20 @@ public class SceneController : MonoBehaviour
                 }
                 // 資源に合わせてマテリアルを変更
                 massObj.GetComponentInChildren<MeshRenderer>().material = resourceMaterials[(int)mass.resource];
-                // マスに番号をセット
-                SetMassNumber();
-
                 massDatas.Add(mass);
             }
             stages.Add(massDatas);
+            stageObjs.Add(massObjects);
+        }
+        // マスに番号をセット
+        SetMassNumber();
+        // ゲームオブジェクトに反映
+        for (int y = 0; y < stageLength.Length; y++)
+        {
+            for (int x = 0; x < stageLength[y]; x++)
+            {
+                stageObjs[y][x].GetComponentInChildren<TextMesh>().text = stages[y][x].number.ToString();
+            }
         }
     }
 
@@ -184,6 +196,16 @@ public class SceneController : MonoBehaviour
         int directionNum = 0;
         while (true)
         {
+            // 現在のマスが砂漠かチェック
+            if (stages[nowPos.y][nowPos.x].resource != RESOURCE.DESERT)
+            {
+                // 現在の位置の番号をセット
+                stages[nowPos.y][nowPos.x].number = massNumber[moveCout];
+            }
+            if (moveCout >= massNumber.Length - 1)
+            {
+                break;
+            }
             var nextPos = nowPos + direction;
             // 進行方向に進めるかチェック
             if (nextPos.y < 0 || nextPos.y > stages.Count-1 || nextPos.x < 0 || nextPos.x > stages[nextPos.y].Count-1)
@@ -197,12 +219,27 @@ public class SceneController : MonoBehaviour
                 direction = moveDirectionWhenDecideNum[directionNum];
                 continue;
             }
-            // 現在の位置の番号をセット
-            stages[nowPos.y][nowPos.x].number = massNumber[moveCout];
-            moveCout++;
-            if (moveCout > massNumber.Length)
+            // 進行方向にすでに番号があるかチェック
+            if (stages[nextPos.y][nextPos.x].number != 0)
             {
-                break;
+                // 進行方向を次の進行方向にして進みなおし
+                directionNum++;
+                if (directionNum > moveDirectionWhenDecideNum.Count - 1)
+                {
+                    directionNum = 0;
+                }
+                direction = moveDirectionWhenDecideNum[directionNum];
+                continue;
+            }
+            // 現在のマスが砂漠かチェック
+            if (stages[nowPos.y][nowPos.x].resource != RESOURCE.DESERT)
+            {
+                moveCout++;
+            }
+            else
+            {
+                // 現在の位置の番号をセット
+                stages[nowPos.y][nowPos.x].number = 100;
             }
             nowPos += direction;
         }
