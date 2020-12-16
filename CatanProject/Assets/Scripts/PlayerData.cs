@@ -14,14 +14,16 @@ public enum ITEM_CARD
 
 public class PlayerData
 {
-    // プレイヤーのID
-    int id;
+    // プレイヤーナンバー
+    int playerNo;
     // プレイヤーが所持している資源
     Dictionary<RESOURCE, int> haveResources;
     // プレイヤーが所持しているカード
     Dictionary<ITEM_CARD, int> haveItemCard;
-    // プレイヤーが所持している家
+    // プレイヤーが所持している家の数
     int haveHome;
-    // プレイヤーが所持している都市
+    // プレイヤーが所持している都市の数
     int haveCity;
+    // 最長の道
+    int longestRoad;
 };
